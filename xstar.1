@@ -1,0 +1,289 @@
+.TH XSTAR 6 "December 21, 1996"
+.UC 4
+.SH NAME
+XStar Version 2.2 \- X11 animated n-body solver
+.SH SYNOPSIS
+.B xstar
+.B [\-hrRMv]
+.B [\-b
+.I stars]
+.B [\-g
+.I geometry]
+.B [\-d
+.I host:display]
+.B [\-t
+.I timeout]
+.B [\-D
+.I delay]
+.B [\-B
+.I buf_factor]
+.B [\-c
+.I star_color]
+.B [\-C
+.I bg_color]
+.B [\-a
+.I float]
+.B [\-m
+.I [taylor3|rk4|gpemce8|ab7|am7]]
+.B [\-l
+.I float]
+.B [\-T
+.I num_pts]
+
+.SH DESCRIPTION
+.I XStar
+is an X11 client that ``solves''
+the n-body problem, and displays the results on
+the screen.  It starts by putting a bunch of stars on the screen, and
+then it lets the inter-body gravitational forces move the stars
+around.  The result is a lot of neat wandering paths, as the stars
+interact and collide.  Try using the display mode options (-c, -C, -R, or -M) to make
+things more colorful.
+.PP
+.SH OPTIONS
+.I XStar
+has the following options:
+.TP
+.B \-h
+Display the usage message and exit.
+.TP
+.BI \-b " stars"
+Select the number of stars to initially have in the star
+system.  The default is 15 stars, the minimum is 2 and the maximum is 249.
+.TP
+.B \-r
+Use root window.
+.TP
+.BI \-g " [=][<width>x<height>][{+-}<xoffset>{+-}<yoffset>]"
+Selects the initial window size and location.  If the \-r
+option is also selected, then the offset is used to move
+the "center of the star system" around.  That is, you can
+use the \-g option to move the interesting stuff to a free
+spot of your screen.
+.TP
+.BI \-d " host:display"
+As in \-d spacsun:0.0 or \-d unix:0.0.
+.TP
+.BI \-t " timeout"
+Use XStar as your screen saver with the given no-activity
+timeout value (in seconds).
+.TP
+.BI \-D " delay"
+Periodically wait for 'delay' milliseconds to keep from using
+100% of the CPU.  The default is 0 ms.  This doesn't always work incredibly
+well to reduce the CPU usage because most Unix schedulers notice that
+XStar is not using as
+much CPU as it could and they increases XStar's priority.  On the other hand,
+it does make the display rate vary less as collisions decrease the number
+of stars.
+.TP
+.BI \-c " star_color"
+Select the color of the stars.  The default is White.  Turns of the
+implicit \-R option.
+.TP
+.BI \-C " bg_color"
+Select the color of the background.  The default is Black.  Turns of the
+implicit \-R option.
+.TP
+.B \-R
+Rotate the star colors through the Rainbow.  This is the default
+unless the \-c or \-C options are used. Very pretty, but
+uses up 48 color slots.  This causes each star track to change
+colors as time passes, but at any given time, all stars have the same
+color.  Also available with the 'r' runtime command.
+.TP
+.B \-M
+Assign multiple star colors.  Also uses up 48 color slots.
+At any given time, each star has a unique color (unless there are too
+many stars to do this).  This makes it much easier to see where
+a star has been.  Also available with the 'm' runtime command.
+.TP
+.BI \-a " value"
+Adjusts the accuracy of the position calculations by a factor of ``value''.
+The larger the value, the more accurately XStar simulates the real world but 
+the slower it runs.  The value can be any floating point number greater
+than zero.  The default value is 1.0.  Any value greater than zero is valid,
+with values below 1 decreasing the accuracy and values above one increasing it.
+.TP
+.BI \-m " taylor3|rk4|gpemce8|ab7|am7"
+Selects the method to use for updating the star locations and velocities.
+The default method is ab7.
+.RS
+.TP
+.B taylor3
+Use a taylor series expansion to get an order 2 method, but then uses previous
+acceleration values to extend it to a 3rd order method.  This method is the
+fastest method and for accuracies below .8 (-a .8), it is also the most
+accurate.
+.TP
+.B rk4
+Use the Runge-Kutta method of 4th order.  It is over 4 times as slow as
+taylor3, but it is not 4 times as accurate.  It is used internally to 
+initialize the taylor3, am7 and ab7 methods.
+.TP
+.B gpemce8
+Use an 8th order Gragg's polynomial extrapolation method
+with modifications
+for conservation of energy to make it a discrete mechanics method.  This is
+by far the most accurate method, and when it's accuracy breaks down, the 
+resulting star system preserves the constants of motion, that is, it conserves
+the energy of the system, the center of gravity, the linear and angular
+momentum, etc.  It is also by far the slowest method and probably not useful
+except on a very fast machine or when you are using it as a benchmark to
+compare other methods.
+.TP
+.B ab7
+Use a 7th order Adam-Bashford method.  This is the default and for accuracies
+in the range of .8 to 4, it is the most efficient method.  It is slightly slower
+than the taylor3 method, especially when there are only a few stars.
+.TP
+.B am7
+Use a 7th order Adam-Moulton predictor-corrector method.  It is about twice
+as expensive as ab7, and not a whole lot more accurate.
+.RE
+.TP
+.BI \-l " float"
+The minimum distance between stars before they collide.  The default is one
+pixel.  This value should be increased when decreasing the accuracy.  You
+can also decrease the collision distance to be less than one pixel if you
+greatly increase the accuracy, but results can be confusing since entire loops
+could be contained within a single pixel.  If this value is set too small for
+the current accuracy, then the star system will star displaying strange
+behaviors.
+.TP
+.BI \-T " num_pts"
+The number of points to display as star trails.  The default is 16384 points,
+the minimum is 512 and the maximum is 24575.  If you use a value less than
+the minimum, then no points will be remembered.  Instead, the star trails
+will not erase themselves and the screen will be periodically cleared.
+Using the \-T 0 option will greatly reduce the memory requirements of XStar.
+.TP
+.BI \-B " buf_factor"
+This changes the amount of buffering to be done with the X server.  The
+default is 1.0, but any number greater than zero can be used to increase or
+decrease the buffering.  If the stars appear to move in a jerky fashion, then
+you should decrease the buffering to a value between 0 and 1.  If there is
+too much server/network load being generated by XStar, then increase the
+buffering factor.
+.TP
+.B \-v
+Display verbose internal debugging information.  Several \-v
+options	will make XStar more verbose.
+.SH RUN TIME COMMANDS
+When XStar is running, it will accept a few commands from the
+keyboard.  They are:
+.TP
+.B "d"
+Add an immobile collapsar/gravity well.
+.TP
+.B "e"
+Erase the star trails.
+.TP
+.B "n"
+Reinitialize the star system with a new set of stars.
+.TP
+.B "+"
+Add a star to the current star system.  All future
+star systems will also have an additional star.
+.TP
+.B "-"
+Delete a star from the current star system.  XStar
+will try to delete the "least interesting" star.
+Often the deleted star will be off the screen.  All future star
+systems will also have one less star.
+.TP
+.B "m"
+Toggle to ``multiple color mode'', where each star has its own color.
+.TP
+.B "r"
+Toggle to ``Rainbow mode'', where the stars will change color with time.
+.TP
+.B "p"
+Pause the updating of the screen.  Actually, XStar will continue to
+update the screen, but there will be a 3 second delay
+between updates.  This is useful if XStar is using up
+too much CPU and you want to stop it for a short period of time.
+.sp
+Press p again to return to full speed.
+.TP
+.B "q"
+Quit running XStar.
+.SH HELPFUL HINTS
+If you find the system running too quickly, you can do any
+of the following
+things:
+.TP
+.B "1)"
+Use the \-D option to add a delay between updates.  This also keeps
+XStar from using 100% of the CPU. 
+.TP
+.B "2)"
+Use the \-a option to increase the accuracy of the system.
+.TP
+.B "3)"
+Use the \-b option to add additional stars.  Doubling the number of
+stars will make XStar run about 4 times as slow.
+.TP
+.B "4)"
+If you have increased the accuracy, you can then also slightly decrease
+the collision distance with the \-l option.  Don't over do it though, or
+you will
+start seeing strange things happen.
+.TP
+.B "5)"
+Use the \-m option to select a more accurate, but less efficient method
+such as rk4 or gpemce8.
+.sp 2
+.LP
+If you find the system running too slowly, you can do any of the following
+things:
+.TP
+.B "1)"
+Use the \-b option to decrease the number of stars.
+.TP
+.B "2)"
+Use the \-a option to decrease the accuracy of the system.  You probably will
+want to change the collision distance a little bit also by using the -l
+option.
+.TP
+.B "3)"
+Use the \-m option to select a less accurate, but faster method namely
+taylor3.  If you decrease the accuracy below .8, taylor3 will be more accurate
+than ab7.
+.TP
+.B "4)"
+Buy a faster computer, get a better optimizer for your compiler, or implement
+a faster method of calculating the star locations.
+.sp 2
+.LP
+If you find the that XStar is using too much memory, you can do any of the
+following:
+.TP
+.B "1)"
+Use the \-T 0 option to eliminate the star trails.  (Saves about 200k.)
+.TP
+.B "2)"
+Do not use rainbow mode or multi-color mode.  (Saves a little bit)
+.TP
+.B "3)"
+Recompile XStar to use a smaller value for HASH_TABLE_BITS.
+.SH AUTHOR
+XStar's author is Wayne Schlitt, wayne@midwestcs.com
+.LP
+All comments, bug reports, bug fixes, enhancements, etc are welcome.
+Send them to me at wayne@midwestcs.com.
+.LP
+This program started out as a heavily modified version of XGrav, which was
+written by David Flater (dave@case50.ncsl.nist.gov) and posted to
+alt.sources on 1/21/95.  I liked the program enough that I was really
+interested in it, but I didn't like it enough to leave it alone.  The
+idea was Dave's, but I think that very little of his code is left.
+There is probably more code left from XSwarm, which
+Dave used to implement the X port of his n-body problem solving code.
+Xswarm's author is Jeff Butterworth (butterwo@cs.unc.edu).
+.LP
+Like XGrav, any claim to this program that I have (which isn't much)
+is under the GNU General Public License.  Have fun with it.
+.LP
+Documentation converted to ``man'' format by Jeff Mogul (mogul@wrl.dec.com),
+who also added the \-m option.

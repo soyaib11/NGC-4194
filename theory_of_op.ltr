@@ -1,0 +1,352 @@
+
+
+                              Theory Of Operation
+                              -------------------
+
+        "Any n-body program that doesn't even mention Greenspan's method
+         isn't worth a squat."
+
+
+
+          When I first saw XGrav, I really liked it.  I thought that the
+     stars wandering around on the screen were really neat.  But, it didn't
+     seem to be working quite right, so I started to dig into it to see if
+     I could "fix" things.  I kept working on it because it seemed to touch
+     on a bunch of areas that I am really interested in.  I like to know
+     how the physical world works, I like understanding the math behind the
+     physics, I like applying the math to a computer program and I like
+     doing computer graphics.
+
+          So, creating XStar has really been an exercise in learning about
+     these areas.  I find XStar fascinating to watch, but my real interest
+     is in what I have learned.  In this document, I am trying to write
+     down what I have learned before I forget it.
+
+          In this light, I would be very interested in hearing about any
+     errors or misconceptions that I might have in either this document or
+     in XStar.
+
+
+
+
+                            Theory of Star Movement
+                            -----------------------
+
+
+          [ There used to be a section here on the theory of the n-body
+     problem and how to solve it.  However, it has been converted into the
+     much larger document n-body.ps.  At this time, there is no ASCII
+     readable equivalent, and the old section had too many mistakes to be
+     worth keeping...]
+
+
+                         Theory of Star System Creation
+                         ------------------------------
+
+
+          I have put a lot of work into the code that creates the initial
+     star system configuration.  The results have been somewhat
+     disappointing.  XGrav just created a bunch of stars with random
+     locations and velocities.  There was a whole 9 lines of code dedicated
+     to the task.  In contrast, XStar has some 1500 lines of star
+     initialization code (more that XGrav in its entirety) yet the star
+     systems that XStar creates last only about 2-3 times as long.  Unlike
+     the movement routine, I wasn't even able to learn about a well
+     research subject, nor was I able discover a whole lot on my own.
+
+          The obvious goal of the star system creation routines is to
+     create "interesting" star systems.  One way this can be done is by
+     creating one of a large number of "special" star configurations.
+     XStar does this, but to me, the challenge was to figure out how to
+     create a large number of stars that would move around a lot and make
+     close passes, but would not collide.   Many of the "special" star are
+     actually test patterns that I created to help solve the "main"
+     problem.
+
+          For a "normal" star system, the obvious goals for making an
+     interesting star system are: first, keep the stars on the screen;
+     second, don't let them collide; and third, make it general so that any
+     number of stars can be handled well.  There are a variety of things
+     that interfere with these goals.
+
+
+
+     Keeping the Stars On the Screen
+     -------------------------------
+
+     * The whole system drifts off to one side
+
+          This is caused by having the total linear momentum of the star
+     system being non-zero.  It is fairly easy to adjust the star system so
+     that it has zero linear momentum, and this adjustment does not effect
+     how the rest of the system interact.
+
+     * The whole star system is off center
+
+          This is caused by the having the center of gravity of the star
+     system off center.  Like the linear momentum, this is easily fixed and
+     doesn't effect other things.
+
+     * The star system gains energy over time
+
+          This can be caused by several things.  First, the movement
+     routine might not preserve the total energy very well.  This is easily
+     solved by using a better movement routine.  Euler's method has this
+     problem, most of the rest do not.  Secondly, the overstep phenomenon
+     can cause stars to gain energy.  This effect can be reduced by using a
+     larger collision distance (-l <num>).
+
+     * Stars leave the system very early on
+
+          This is caused by giving stars more kinetic energy than they
+     should have.  For stars that are moving in a circular orbit, having a
+     kinetic energy to binding energy ratio of around 1/2 seems to work
+     well.  At exactly 1/2, the stars will make an exact circle, but you
+     can deviate a little to get elliptical orbits.  Stars that are moving
+     tangentailly to the center of gravity can have a higher ratio than
+     stars moving directly in line with the center of gravity.
+
+     * After many collisions, the stars seem to drift apart
+
+          I don't think there is anything that can be done about this.
+     Usually when stars collide, it is because they have transferred energy
+     and angular momentum to other stars so that the colliding stars can
+     fall together.  Because energy and angular momentum are two of the
+     conserved constants of motion, it means that the other stars must now
+     have a larger orbit.  [Does this mean that in order for galaxies,
+     stars and planets to form, the universe must expand?]
+
+
+
+     Keeping the Stars From Colliding
+     --------------------------------
+
+     * The whole star system collapses toward the center
+
+          This is caused by not giving the stars enough kinetic energy and
+     thus having the kinetic energy to binding energy ratio too low.
+
+
+     * Stars collide at too large a distance
+
+          This is adjustable with the -l parameter and the default is a
+     fairly reasonable 1 pixel.  If you adjust this to be less than one
+     pixel, make sure that you also greatly increase the accuracy (via the
+     -a parameter).  Otherwise, the overstep phenomenon will cause other
+     undesirable effects.
+
+     * Stars collide early on
+
+          This is hard to fix, especially if one considers any collision to
+     be too early.  In the star creation code, I do add in an adjustment to
+     the velocity to try to avoid nearby stars, but this does not always
+     work very well.
+
+     * Stars collide after a while
+
+          I don't think there is anything that can prevent stars from
+     eventually colliding.  I do put a counter-clockwise spin on things
+     because it seems to help quite a bit with the long term stability of
+     the system.  On the other hand, this may be part of the what causes
+     the star system to expand after many collisions.  This spin causes the
+     system to have a fairly large angular momentum, which is preserved
+     throughout the life of the star system.  When there are only a few
+     stars left, they have to have a large separation.
+
+          Another thing to think about on the subject of long lasting star
+     systems is how large you should create the initial star system.  The
+     star system can be scaled up or down by changing STARAREA in xstar.h
+     and the resulting star systems will act just like you zoomed in our
+     out on the star system.  However, if you make the star system smaller,
+     then stars that would have made near passes to each other will now
+     collide.  On the other hand, since all star systems expand over time,
+     if you make the star system larger, then you will reach the point where
+     the stars are all off the screen sooner.  Well, sort of.  Since the
+     star system tends to expand as stars collide and larger star systems
+     have fewer collisions, this expansion effect is somewhat mitigated.
+     XStar is configured so that the initial star system configurations
+     just barely fit on the default 512x512 window.
+
+          A clue to how difficult it is to try and create a truly long
+     lasting star system is evident from how just changing a few of the
+     magic numbers by 5-15%, you can change the length of time that a
+     particular star system lasts by a factor of 2-10.  While it is
+     possible to tweak the constants to make a particular configuration run
+     for a long time, you must run a large number of star systems to see if
+     those tweaks make an overall improvement.
+
+
+
+     Making the Star Creation General
+     --------------------------------
+
+          One of the more successful aspects of the star system creation
+     code is that it is fully generalized.  It works well over a very wide
+     range of stars, from 2 to at least 50 stars.  There are few magic
+     constants, and most of those can be traced back to the fundamental
+     physics of the problem.  Now, the fact that the current algorithm can
+     handle any number of stars fairly well doesn't mean I think it is a
+     elegant algorithm.  It is a flexible and general hack, but it is still
+     an ad-hoc system that can not be fully derived from a theory.
+
+
+
+
+                           Theory of the Display Code
+                           --------------------------
+
+          The display code is, of course, one of the major parts of XStar.
+     It is, after all, an X screen saver.  While I have not put as much
+     work into the display code as I have into the star movement code or
+     the star system creation code, there was still a lot of thought put
+     into it.  Figuring out how to do everything that XStar does in a quick
+     and memory efficient manor took some thinking.
+
+          The display code has to be able to add points as they are
+     created, delete points when they get too old, replot the screen on
+     expose events or mode switches, and correctly handle the case where a
+     star trail overwrites an old trail.  To do all this, I have set up two
+     major data structures.
+
+          First, there is a ring buffer that is used to store the displayed
+     points in.  In this structure is stored the x,y location of the point,
+     what star created this point, what color of the rainbow it should be
+     and a time stamp of what step this point was created on.  A pointer is
+     kept to the beginning of the list so we know where to add stars to, and
+     to the end of the list so that we know what points to erase.  The
+     timestamp is used to determine how quickly a star should be erased.
+     The stars are always kept in timestamp order.
+
+          The second structure is a hash table that is used to locate a
+     specific x,y point in the ring buffer.  If the x,y location is found
+     in the ring buffer when a new point is being added to the ring, then
+     the old location is marked as being unused.  This keeps the erase code
+     from clearing a point that was overwritten later on.  I had considered
+     other options such as doing a linear search, but that would be way too
+     slow.  A binary tree was also considered, but since the points tend to
+     be added in a very non-random order, I would have had to use some sort
+     of self-balancing trees (such as red-black tress).  Also, with the
+     amount of storage taken up with the two links, it is possible to
+     create a hash table that is so large that you will rarely have to
+     search more than a few table entries.  So, the hash table is probably
+     the quickest, most memory efficient and simplest method.
+
+          The hash table uses linear probing on a hash collision because I
+     need to both add and delete items out of the hash table.  Linked lists
+     of collision chains would require too much memory and using a
+     secondary hash function to resolve collisions would make it very hard
+     to delete items.  According to Knuth, you can estimate the number of
+     items that you must check to find a match, or verify that an entry
+     isn't in the hash table, by the formulas:
+
+                                   Unsuccessful        Successful
+          Separate Chaining:       1 + a/2             (a+1)/2
+          Linear Probing:          .5 + 1/(2*(1-a)^2)  .5 + 1/(2*(1-a))
+          Double Hashing:          1/(1-a)             - ln(1-a)/a
+
+          Where a = the loading of the table.  i.e., the ratio of used
+                    entries to total entries.
+
+          Experiments with XStar seemed to be show that the linear probe
+     estimate is fairly close.  XStar does not use a truly random hash
+     function and it also has to keep placeholder tags that increase the
+     number of entries that need to be searched by a little bit.  Still,
+     with the default settings XStar will normally locate a duplicate point
+     in one or two checks.  It can verify that a point has not been displayed
+     in only 1-4 checks.  This is fewer compares than a binary search would
+     take, although you have to include the cost of the hash function in
+     deciding which method is the fastest.
+
+          The hash function is a home grown method.  I simply took two
+     large random numbers and found the next prime after them.  Then, I
+     take the x and y coordinates, multiply them by these primes and add
+     the result together.  I chose large numbers so that a single bit
+     change in one of the coordinates would cause, on average, half of the
+     bits in the hash to change.  I chose prime numbers so that common
+     factors could not cause the same hash to be generated by just flipping
+     the x and y coordinates around.  The hash function needed to be fairly
+     random, but it also needed to be quick.  My testing seems to show that
+     it is random enough and quick enough for XStar.
+
+
+          One word of warning about the display code:  it allocates one
+     graphics context for each color.  Since xstar is constantly switching
+     colors, changing the color was making up a fairly significant amount
+     of the packets being sent to the X-server.  In particular, using lots
+     of graphic contexts made expose events replot much quicker.  So, if
+     you X-server doesn't like this, then you might have to tweak the code
+     to switch colors on a single graphics context.
+
+     
+
+
+                                  Future Stuff
+                                  ------------
+
+          The following are notes on how I might implement some future
+     enhancements.  Don't expect them to appear any time soon though...
+
+
+
+     Variable Step Methods
+     ---------------------
+
+          Implementing a variable step method could make a very large
+     improvement in the speed if XStar.  The problem has always been that I
+     think that XStar should give a feel about how fast something is moving
+     and a variable step method would actually make stars appear to move
+     slowest when they are really moving the fastest.
+
+          With the recent creation of the display points list, it is now
+     possible to create star positions before they need to be displayed.
+     We can fill up the buffer with new star positions, and display them at
+     a constant rate.  There are a lot of messy details that have to be
+     worried about, but variable step sized methods are now a very real
+     possibility and my estimate is that they could make XStar 2-10 times as
+     fast.
+
+          The easiest way to do this is when you want to change the step
+     size of the system, you would simply rescale the velocities and
+     masses.  This would be much quicker than actually keeping a step size
+     variable around that has to be taken into account during the
+     movements.  The display list code would need some work because the
+     timestamps that are stored with each point are really "step numbers"
+     and they must remain integers.  Knowing how quickly stars will need to
+     be displayed, however, should help in determining how quickly we need
+     to erase stars and still keep the buffer from overflowing.
+
+          A more sophisticated variable step size method would be to have
+     each star have its own step size.  There is no reason why a star that
+     is moving slowly off by itself should have a smaller step size just
+     because two other stars are making a close pass to each other.
+
+
+
+     Speed Hacks for Calculating Star Attractions
+     --------------------------------------------
+
+          For large numbers of stars, calculating the total acceleration of
+     a given star dominates almost everything else.  This calculation
+     involves find lots of distances and angles between various stars.
+     Now, most of the time these distances and angles are not changing
+     rapidly.  It is only the near by stars that rapidly change their
+     contribution to the total acceleration.  You should be able to do some
+     sort of caching of the old values from the distant stars and make
+     things run a whole lot faster.
+
+
+
+     Going to 3-D
+     ------------
+
+          Going to a three dimensional system instead of just a two
+     dimensional system would probably make the star systems last much
+     longer.  After all, a one dimensional star system will either expand
+     forever or collapse to a single point.  With two dimensions, stable
+     orbits can be set up, although there are still a lot of collisions.
+     Adding a third dimension should greatly reduce the number of
+     collisions and make XStar behave more like the real galaxy.
+
+          Maybe we could use color to denote the location in the third
+     dimension or something.  I am also curious about what kind of looping
+     patters would be created in such a system.

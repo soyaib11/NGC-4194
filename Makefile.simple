@@ -1,0 +1,75 @@
+#
+#  Possible options:
+#
+#  -DNUM_COLORS=<num>
+#		number of colors to use.  Default is 48, max is 64.  It
+#           probably should be a multiple of 3 to give pure RGB values.
+#
+#  -DHASH_TABLE_BITS=<num>
+#		number of bits used to store indexes into the
+#		hash table.  The default is 15, the maximum (without
+#		some recoding) is 16.  The larger this number, the
+#		larger the hash table will be and the more point
+#		locations will saved.
+#
+#		The default of 15 uses 64k for the hash table and
+#		128k for points.
+#
+#  -DNEEDS_TYPEDEFS
+#		define if the typedefs uint_t etc are not automatically
+#		defined for you.  (HPUX 8.0 and 9.0 need this)
+#
+#  -DUSE_USLEEP
+#		use usleep() instead of nap().  (needed for HPUX 8.0)
+#
+#  -DRAND48_PROTO
+#		give prototypes for the *rand48() functions.  (needed
+#		for HPUX 8.0)
+#
+#  -DUSE_RANDOM
+#           Use the BSD random() functions instead of the sysv rand48()
+#           functions.
+#
+
+CFLAGS = -O
+
+
+# DEPLIBS = $(DEPXLIB)
+LOCAL_LIBRARIES = $(XLIB)
+LDLIBS = -lm -lX11
+
+
+HDRS    = xstar.h patchlevel.h vroot.h
+HDREXTS = xstar_ext.h plot_star.h
+
+MOVE	= move_stars_euler1.c move_stars_taylor3.c move_stars_rk4.c \
+	move_stars_gpemce8.c move_stars_ab4.c move_stars_ab7.c \
+	move_stars_am7.c move_stars_rk4b.c
+
+SYS	= dump_sys.c init_sys_4.c init_sys_8.c init_sys_8b.c \
+	init_sys_1a.c init_sys_1b.c init_sys_1c.c
+
+SRCS    = xstar.c init_stars.c init_colors.c global_vars.c \
+	  check_bounce.c animate.c collide.c sys_const.c default_init.c \
+	  set_sys_param.c set_xmva.c update_screen.c plot_collapsars.c \
+	  reset_hstep.c set_star_disp.c
+
+AUX	= README xstar.1 Imakefile \
+	  README.xgrav COPYING theory_of_op.ltr n-body.ps Makefile.simple
+OBJS    = $(SRCS:.c=.o) $(MOVE:.c=.o) $(SYS:.c=.o) 
+
+
+xstar:	$(OBJS) $(DEPLIBS)
+	$(CC) -o $@ $(OBJS) $(LDOPTIONS) $(LOCAL_LIBRARIES) $(LDLIBS) $(EXTRA_LOAD_FLAGS)
+
+
+shar:
+	shar -l 50 -o xstar.part $(AUX) $(SRCS) $(MOVE) $(SYS) $(HDRS) $(HDREXTS)
+
+tar:
+	tar cvzf xstar.tar.gz $(AUX) $(SRCS) $(MOVE) $(SYS) $(HDRS) $(HDREXTS)
+
+
+$(OBJS)::	$(HDRS)
+
+$(MOVE:.c=.o)::	plot_star.h
